@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PneumoScan &mdash; X-ray Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">PneumoScan</span>
+  </div>
+  <div class="status-chip {{ 'status-ready' if model_ready else 'status-error' }}">
+    <span class="status-dot"></span>
+    {% if model_ready %}model ready{% else %}model unavailable{% endif %}
+  </div>
+</header>
+
+<main class="stage">
+
+  {% if not model_ready %}
+  <div class="banner banner-error">
+    <strong>Can't load a model.</strong> {{ model_error }}
+  </div>
+  {% endif %}
+
+  <section class="viewer" aria-label="X-ray viewer">
+
+    <div class="lightbox" id="lightbox">
+      <div class="lightbox-clip lightbox-clip--left" aria-hidden="true"></div>
+      <div class="lightbox-clip lightbox-clip--right" aria-hidden="true"></div>
+
+      <div class="lightbox-empty" id="dropzone" tabindex="0" role="button"
+           aria-label="Upload a chest X-ray image">
+        <input type="file" id="fileInput" accept="image/*" hidden {{ '' if model_ready else 'disabled' }}>
+        <svg class="dropzone-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M20 26V8M20 8L13 15M20 8L27 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 28V31C6 32.66 7.34 34 9 34H31C32.66 34 34 32.66 34 31V28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="dropzone-label">Drop a chest X-ray here, or click to select</p>
+        <p class="dropzone-sub">JPG or PNG</p>
+      </div>
+
+      <div class="lightbox-loading" id="loadingState" hidden>
+        <div class="scan-line"></div>
+        <p>reading image&hellip;</p>
+      </div>
+
+      <div class="lightbox-image" id="imageState" hidden>
+        <img id="xrayImg" alt="Uploaded chest X-ray">
+      </div>
+    </div>
+
+    <div class="view-toggle" id="viewToggle" hidden>
+      <button type="button" class="toggle-option is-active" data-view="original">Original</button>
+      <button type="button" class="toggle-option" data-view="heatmap">Grad-CAM</button>
+    </div>
+
+    <button type="button" class="reset-link" id="resetBtn" hidden>Load a different image</button>
+  </section>
+
+  <section class="readout" id="readout" aria-live="polite">
+    <div class="readout-empty" id="readoutEmpty">
+      <p>Results will appear here once an image is analyzed.</p>
+    </div>
+
+    <div class="readout-content" id="readoutContent" hidden>
+      <div class="readout-header">
+        <span class="readout-eyebrow">Prediction</span>
+        <span class="readout-verdict" id="verdictLabel">&mdash;</span>
+      </div>
+
+      <div class="gauge-wrap">
+        <div class="gauge-track">
+          <div class="gauge-fill" id="gaugeFill"></div>
+          <div class="gauge-midline" aria-hidden="true"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>NORMAL</span>
+          <span class="gauge-value" id="gaugeValue">&mdash;</span>
+          <span>PNEUMONIA</span>
+        </div>
+      </div>
+
+      <dl class="readout-facts">
+        <div class="fact-row">
+          <dt>Confidence</dt>
+          <dd id="confidenceValue">&mdash;</dd>
+        </div>
+        <div class="fact-row">
+          <dt>Grad-CAM focus</dt>
+          <dd id="focusValue">&mdash;</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="readout-error" id="readoutError" hidden></div>
+  </section>
+
+</main>
+
+<footer class="disclaimer">
+  Educational / portfolio project only &mdash; not a diagnostic device and not validated for
+  clinical use. Always consult a radiologist or physician for real diagnoses.
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+*.egg-info/
+
+# Trained model weights (large binary — don't commit to git; see app/models/README.md)
+app/models/*.pt
+app/models/*.pth
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Colab / Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Environment variables / secrets
+.env
+kaggle.json
