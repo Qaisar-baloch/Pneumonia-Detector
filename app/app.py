@@ -14,7 +14,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import transforms, models
-import cv2
 from PIL import Image
 from flask import Flask, request, jsonify, render_template
 
@@ -140,6 +139,18 @@ def quadrant_focus(cam_resized):
     return f"{vert} {horiz} lung field"
 
 
+def jet_colormap(values):
+    """A small numpy-only approximation of matplotlib/OpenCV's 'jet' colormap,
+    so we don't need OpenCV just for this one call. Input: 2D array in [0, 1].
+    Output: (H, W, 3) uint8 RGB array."""
+    v = np.clip(values, 0, 1)
+    r = np.clip(1.5 - np.abs(4 * v - 3), 0, 1)
+    g = np.clip(1.5 - np.abs(4 * v - 2), 0, 1)
+    b = np.clip(1.5 - np.abs(4 * v - 1), 0, 1)
+    rgb = np.stack([r, g, b], axis=-1)
+    return (rgb * 255).astype(np.uint8)
+
+
 def image_to_base64(img_array_rgb_uint8):
     img = Image.fromarray(img_array_rgb_uint8)
     buf = io.BytesIO()
@@ -172,9 +183,9 @@ def predict():
     input_tensor = eval_transform(pil_img).unsqueeze(0).to(device)
 
     cam, prob = gradcam.generate(input_tensor)
-    cam_resized = cv2.resize(cam, (IMG_SIZE, IMG_SIZE))
-    heatmap = cv2.applyColorMap(np.uint8(255 * cam_resized), cv2.COLORMAP_JET)
-    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+    cam_img = Image.fromarray((cam * 255).astype(np.uint8)).resize((IMG_SIZE, IMG_SIZE), Image.BILINEAR)
+    cam_resized = np.array(cam_img).astype(np.float32) / 255.0
+    heatmap = jet_colormap(cam_resized)
 
     display_img = pil_img.resize((IMG_SIZE, IMG_SIZE))
     display_arr = np.array(display_img).astype(np.uint8)
