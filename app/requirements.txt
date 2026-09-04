@@ -5,3 +5,5 @@ torch>=2.1
 torchvision>=0.16
 Pillow>=10.0
 numpy>=1.26
+streamlit
+huggingface_hub
