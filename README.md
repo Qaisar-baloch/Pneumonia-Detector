@@ -1,12 +1,20 @@
 # PneumoScan — AI-Assisted Pneumonia Detection from Chest X-Rays
 
+> 🚀 **[Try the Live Streamlit App](https://qaisar-baloch-pneumonia-detector-appstreamlit-app-i5ycry.streamlit.app/)**
+
 An end-to-end deep learning portfolio project for detecting pneumonia from chest X-ray images using a fine-tuned **ResNet18** model. The project covers data preparation, model training and evaluation, Grad-CAM explainability, and an interactive **Streamlit clinical-style workstation** for inference.
 
 > ⚠️ **Educational / portfolio project only.** PneumoScan is not a medical device, is not clinically validated, and must not be used to diagnose, treat, or rule out disease. Any real clinical decision should be made by a qualified healthcare professional.
 
 ## Demo
 
-The current user-facing application is a Streamlit app designed as a dark, radiology-inspired workstation. It supports:
+### 🌐 Live application
+
+**[Launch PneumoScan — Streamlit Live Demo](https://qaisar-baloch-pneumonia-detector-appstreamlit-app-i5ycry.streamlit.app/)**
+
+No installation is required. Upload a chest X-ray (`JPG`, `JPEG`, or `PNG`) to explore the model's prediction, probability/confidence readout, and Grad-CAM explanation.
+
+The current user-facing application is a dark, radiology-inspired Streamlit workstation. It supports:
 
 - Chest X-ray upload (`JPG`, `JPEG`, `PNG`)
 - Basic technical image-quality checks
@@ -87,9 +95,17 @@ PneumoScan generates a **Grad-CAM** heatmap from the final convolutional feature
 
 The application deliberately describes Grad-CAM as an **explainability aid**, not as a clinically validated lesion-localization method. A highlighted region does not prove that pneumonia is present there, and the visualization should not be interpreted as a radiological finding.
 
-## Streamlit application
+## Getting started
 
-### Run locally
+### 🌐 1. Try the deployed Streamlit app
+
+No installation is required.
+
+👉 **[Launch PneumoScan — Live Streamlit App](https://qaisar-baloch-pneumonia-detector-appstreamlit-app-i5ycry.streamlit.app/)**
+
+Upload a chest X-ray image and review the model's prediction, confidence score, and Grad-CAM visualization.
+
+### 💻 2. Run the Streamlit app locally
 
 From the repository root:
 
@@ -107,13 +123,19 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Streamlit will provide a local URL, normally similar to:
+The application will normally be available at:
 
 ```text
 http://localhost:8501
 ```
 
-### Model checkpoint
+### 🧠 3. Train the model
+
+Open `notebooks/pneumonia_detection.ipynb` in Google Colab and run the training pipeline. A GPU runtime is recommended.
+
+After training, the resulting checkpoint can be used by the Streamlit application.
+
+## Model checkpoint and configuration
 
 The application expects the trained checkpoint at:
 
@@ -206,7 +228,7 @@ The **Streamlit application is the current primary UI** for the project; the Fla
 - Add calibration analysis and uncertainty estimation.
 - Add batch inference and prediction-history functionality.
 - Improve automated detection of out-of-distribution or non-chest-X-ray inputs.
-- Deploy the Streamlit application for controlled public demonstration.
+- Improve deployment reliability and cold-start performance for the public Streamlit demonstration.
 
 ## References and acknowledgments
 
