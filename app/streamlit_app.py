@@ -171,16 +171,60 @@ else:
         pred_label = idx_to_class.get(pred_idx, str(pred_idx))
         confidence = prob if pred_idx == 1 else (1 - prob)
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([2, 1])
+
         with col1:
-            st.image(display_arr, caption="Original", use_container_width=True)
+            img_col1, img_col2 = st.columns(2)
+            with img_col1:
+                st.image(display_arr, caption="Original", use_container_width=True)
+            with img_col2:
+                st.image(overlay, caption="Grad-CAM heatmap", use_container_width=True)
+
         with col2:
-            st.image(overlay, caption="Grad-CAM heatmap", use_container_width=True)
+            accent = "#ff6b5b" if pred_label == "PNEUMONIA" else "#2dd4bf"
+            marker_pos = min(max(prob * 100, 2), 98)
 
-        if pred_label == "PNEUMONIA":
-            st.error(f"Prediction: **PNEUMONIA** ({confidence*100:.1f}% confidence)")
-        else:
-            st.success(f"Prediction: **NORMAL** ({confidence*100:.1f}% confidence)")
+            st.markdown(
+                f"""
+                <div style="
+                    background:#1a1d24;
+                    border:1px solid #2a2e38;
+                    border-radius:10px;
+                    padding:20px;
+                    font-family:monospace;
+                ">
+                    <div style="color:#8a8f98; font-size:11px; letter-spacing:2px;">PREDICTION</div>
+                    <div style="color:{accent}; font-size:28px; font-weight:700; margin:4px 0 16px 0;">
+                        {pred_label}
+                    </div>
 
-        st.write(f"Pneumonia probability: {prob*100:.1f}%")
-        st.write(f"Model focus region: {quadrant_focus(cam_resized)}")
+                    <div style="position:relative; height:8px; border-radius:4px;
+                                background:linear-gradient(90deg,#2dd4bf,#3a3f4b,#ff6b5b);
+                                margin-bottom:6px;">
+                        <div style="
+                            position:absolute; top:-4px; left:{marker_pos}%;
+                            width:2px; height:16px; background:#ffffff;
+                            transform:translateX(-1px);
+                        "></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;
+                                color:#8a8f98; font-size:11px;">
+                        <span>NORMAL</span>
+                        <span>{prob*100:.0f}% pneumonia</span>
+                        <span>PNEUMONIA</span>
+                    </div>
+
+                    <hr style="border-color:#2a2e38; margin:16px 0;">
+
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span style="color:#8a8f98;">Confidence</span>
+                        <span style="color:#e6e6e6;">{confidence*100:.0f}%</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#8a8f98;">Grad-CAM focus</span>
+                        <span style="color:#e6e6e6;">{quadrant_focus(cam_resized)}</span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
