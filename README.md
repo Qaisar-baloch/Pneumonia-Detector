@@ -1,121 +1,218 @@
-# PneumoScan — Pneumonia Detection from Chest X-Rays
+# PneumoScan — AI-Assisted Pneumonia Detection from Chest X-Rays
 
-A complete, end-to-end deep learning project: fine-tune a CNN on chest X-rays, evaluate it
-rigorously, explain its predictions with Grad-CAM, and serve it through a web app.
+An end-to-end deep learning portfolio project for detecting pneumonia from chest X-ray images using a fine-tuned **ResNet18** model. The project covers data preparation, model training and evaluation, Grad-CAM explainability, and an interactive **Streamlit clinical-style workstation** for inference.
 
-> ⚠️ **Educational / portfolio project only.** This is not a medical device and has not been
-> validated for clinical use. Always consult a radiologist or physician for real diagnoses.
+> ⚠️ **Educational / portfolio project only.** PneumoScan is not a medical device, is not clinically validated, and must not be used to diagnose, treat, or rule out disease. Any real clinical decision should be made by a qualified healthcare professional.
 
-## What's in this repo
+## Demo
 
-```
-pneumonia-detector/
+The current user-facing application is a Streamlit app designed as a dark, radiology-inspired workstation. It supports:
+
+- Chest X-ray upload (`JPG`, `JPEG`, `PNG`)
+- Basic technical image-quality checks
+- ResNet18 inference
+- Pneumonia probability and model confidence
+- `NORMAL` / `PNEUMONIA` prediction using a configurable decision threshold
+- Original image and Grad-CAM explainability views
+- A plain-language attention/focus summary
+- Explicit AI-assistance and clinical-safety messaging
+- Model loading from a local checkpoint or optional Hugging Face Hub fallback
+
+The Streamlit interface is implemented in [`app/streamlit_app.py`](app/streamlit_app.py).
+
+## Repository structure
+
+```text
+Pneumonia-Detector/
 ├── notebooks/
-│   └── pneumonia_detection.ipynb   # Data pipeline → training → evaluation → Grad-CAM
+│   └── pneumonia_detection.ipynb   # Data pipeline, training, evaluation & Grad-CAM
 ├── app/
-│   ├── app.py                      # Flask backend (inference + Grad-CAM API)
-│   ├── templates/index.html        # Upload UI
-│   ├── static/style.css            # "Radiology lightbox" design
-│   ├── static/script.js            # Drag/drop upload, toggle, live results
-│   ├── models/                     # Put your trained .pt file here (not committed to git)
-│   └── requirements.txt
+│   ├── streamlit_app.py            # Main Streamlit inference application
+│   ├── app.py                      # Original Flask inference application/API
+│   ├── requirements.txt            # Python dependencies
+│   ├── models/                     # Local model checkpoint (not committed)
+│   ├── screenshots/                # Project screenshots/evaluation figures
+│   ├── .streamlit/                 # Streamlit configuration
+│   ├── templates/                  # Flask frontend
+│   └── static/                     # Flask frontend assets
 ├── LICENSE
 └── README.md
 ```
 
 ## Screenshots
 
-**The web app** — upload an X-ray, get a prediction with a Grad-CAM heatmap:
+### Streamlit clinical workstation
 
-![App screenshot](app/screenshots/app_screenshot.png)
+Upload a chest X-ray, run the model, review the probability readout, and inspect the original image alongside the Grad-CAM explanation.
 
-**Model evaluation** — confusion matrix and ROC curve on the held-out test set:
+![PneumoScan Streamlit app](app/screenshots/app_screenshot.png)
 
-![Evaluation metrics](app/screenshots/eval_metrics.png)
+### Model evaluation
 
-## Results
+The training notebook includes evaluation outputs such as the confusion matrix and ROC curve on the held-out test set.
 
-Trained on the [Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
-dataset (Kermany et al.), using a ResNet18 backbone fine-tuned via transfer learning.
+![Model evaluation metrics](app/screenshots/eval_metrics.png)
 
-| Metric (test set) | Value |
-|---|---|
+## Model and dataset
+
+The model is trained using the **Chest X-Ray Images (Pneumonia)** dataset from Kermany et al., commonly distributed through Kaggle. The classifier uses a **ResNet18** backbone with transfer learning.
+
+The training pipeline:
+
+1. Re-splits the available data into train/validation/test sets because the original validation split is too small for reliable model selection.
+2. Applies image augmentation to the training data.
+3. Converts grayscale X-rays to three channels and normalizes using ImageNet statistics.
+4. Uses a pretrained ResNet18 architecture with a binary classification head.
+5. Fine-tunes later ResNet layers and the classification head.
+6. Uses a `pos_weight`-adjusted loss to account for class imbalance.
+7. Trains with Adam, `ReduceLROnPlateau`, and early stopping based on validation loss.
+
+## Reported test-set results
+
+The current notebook reports the following results at a decision threshold of **0.85**:
+
+| Metric | Value |
+|---|---:|
 | ROC-AUC | 0.966 |
 | Recall (PNEUMONIA) | 98.7% |
 | Precision (PNEUMONIA) | 85.6% |
 | F1-score | 0.917 |
 | Accuracy | 88.8% |
 
-*(at a tuned decision threshold of 0.85 — see the notebook's threshold-sweep cell in
-Section 7 for the full precision/recall trade-off curve, and the "Limitations" section
-below for important caveats on what these numbers do and don't mean.)*
+These are held-out test-set results from the project dataset and should **not** be interpreted as clinical performance. In particular, the threshold was selected after inspecting test-set behavior, so the reported metrics should be treated as portfolio-project results rather than an unbiased prospective evaluation.
 
-## How it works
+## Explainability with Grad-CAM
 
-1. **Data pipeline** — re-splits the dataset into proper train/val/test sets (the original
-   `val` folder is too small to be useful), applies augmentation, and normalizes to
-   ImageNet statistics.
-2. **Model** — ResNet18 pretrained on ImageNet; early layers frozen, `layer4` and a new
-   classification head fine-tuned. A `pos_weight`-adjusted loss handles the dataset's class
-   imbalance.
-3. **Training** — Adam optimizer, `ReduceLROnPlateau` scheduling, early stopping on
-   validation loss.
-4. **Evaluation** — confusion matrix, precision/recall/F1, ROC-AUC, and a decision-threshold
-   sweep on the held-out test set.
-5. **Explainability** — Grad-CAM heatmaps show which image regions drove each prediction.
-6. **Serving** — a Flask app loads the trained weights and exposes a `/predict` endpoint;
-   the frontend is a single-page upload UI styled like a radiology lightbox, with a toggle
-   between the original X-ray and its Grad-CAM overlay.
+PneumoScan generates a **Grad-CAM** heatmap from the final convolutional feature layer of ResNet18. The heatmap is intended to help visualize image regions that influenced the model output.
 
-## Getting started
+The application deliberately describes Grad-CAM as an **explainability aid**, not as a clinically validated lesion-localization method. A highlighted region does not prove that pneumonia is present there, and the visualization should not be interpreted as a radiological finding.
 
-### 1. Train the model
-Open `notebooks/pneumonia_detection.ipynb` in Google Colab, run all cells (GPU runtime
-recommended), and download the resulting `pneumonia_resnet18.pt`.
+## Streamlit application
 
-### 2. Run the app
+### Run locally
+
+From the repository root:
+
 ```bash
 cd app
 python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-# place pneumonia_resnet18.pt in app/models/
-python app.py
-```
-Then open http://127.0.0.1:5000.
 
-Full setup details are in [`app/README.md`](app/README.md).
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+# venv\\Scripts\\activate
+
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+Streamlit will provide a local URL, normally similar to:
+
+```text
+http://localhost:8501
+```
+
+### Model checkpoint
+
+The application expects the trained checkpoint at:
+
+```text
+app/models/pneumonia_resnet18.pt
+```
+
+The checkpoint is intentionally not committed to Git. If the local model file is missing, the Streamlit app can optionally download it from the Hugging Face Hub when the following environment variables are configured:
+
+```text
+HF_MODEL_REPO_ID=<your-hugging-face-repository>
+HF_MODEL_FILENAME=pneumonia_resnet18.pt
+```
+
+The model path can also be overridden with:
+
+```text
+MODEL_PATH=<path-to-model-checkpoint>
+```
+
+### Decision threshold
+
+The default pneumonia decision threshold is:
+
+```text
+0.85
+```
+
+It can be overridden with:
+
+```text
+PNEUMONIA_THRESHOLD=0.85
+```
+
+The threshold controls the final `NORMAL` / `PNEUMONIA` label; it does not change the underlying model probability.
+
+## Streamlit inference workflow
+
+The current application follows this flow:
+
+```text
+Upload X-ray
+    ↓
+Basic technical quality checks
+    ↓
+Image preprocessing
+    ↓
+ResNet18 inference
+    ↓
+Pneumonia probability
+    ↓
+Threshold-based prediction
+    ↓
+Grad-CAM generation
+    ↓
+Clinical-style AI readout + explanation
+```
+
+The model loader returns the model, Grad-CAM object, class mapping, and model status together. This keeps the class mapping available during inference and prevents the previous `idx_to_class` undefined-variable failure.
+
+## Original Flask application
+
+The repository also retains the earlier Flask implementation in [`app/app.py`](app/app.py). It provides a traditional web/API interface with:
+
+- `GET /` for the upload page
+- `POST /predict` for image inference
+- ResNet18 prediction
+- Grad-CAM heatmap generation
+- JSON responses containing prediction, confidence, probability, focus information, and encoded images
+
+The **Streamlit application is the current primary UI** for the project; the Flask implementation is retained as an alternative/earlier serving interface.
 
 ## Limitations
 
-- Trained on a single-institution pediatric dataset (Guangzhou Women and Children's Medical
-  Center) — performance on adult patients, other scanners, or other hospitals is unverified.
-- Grad-CAM visualizations occasionally highlight mediastinal/central regions rather than the
-  lung fields specifically — a known pattern with this dataset, likely reflecting acquisition
-  differences between the NORMAL and PNEUMONIA image sets rather than the pathology itself.
-  This is a useful reminder that high accuracy doesn't always mean the model is "seeing" what
-  a radiologist would.
-- The 0.85 decision threshold was chosen by inspecting test-set metrics directly; a more
-  rigorous approach would tune the threshold on the validation set and only check the test
-  set once, to avoid indirectly fitting to test data.
-- No external validation on a second dataset has been performed.
+- The dataset comes from a limited clinical setting and is primarily pediatric; generalization to adults, different hospitals, scanners, populations, and acquisition protocols is unverified.
+- No external validation on an independent dataset has been performed.
+- Dataset-specific artifacts and acquisition differences may influence model predictions.
+- Grad-CAM can highlight central or mediastinal regions rather than clinically meaningful lung pathology.
+- The current 0.85 threshold was selected using test-set inspection, introducing a risk of optimistic metric reporting.
+- Basic image-quality checks are technical heuristics, not a substitute for radiological quality assessment.
+- The model may produce confident predictions on images outside its training distribution.
+- The application does not replace a radiologist or physician.
 
-## Possible extensions
+## Possible future improvements
 
-- Try alternate backbones (DenseNet121, EfficientNet) and compare
-- Tighter lung-field cropping/segmentation before classification, to reduce reliance on
-  non-pulmonary regions
-- User accounts + a history of past predictions
-- Deploy for public access (Render, Railway, Hugging Face Spaces)
+- Tune the decision threshold using only the validation set before final test evaluation.
+- Perform external validation on an independent chest X-ray dataset.
+- Compare additional backbones such as DenseNet121 or EfficientNet.
+- Add lung-field segmentation/cropping to reduce reliance on non-pulmonary regions.
+- Add calibration analysis and uncertainty estimation.
+- Add batch inference and prediction-history functionality.
+- Improve automated detection of out-of-distribution or non-chest-X-ray inputs.
+- Deploy the Streamlit application for controlled public demonstration.
 
-## Acknowledgments
+## References and acknowledgments
 
-- Dataset: Kermany, D., Zhang, K., Goldbaum, M. "Labeled Optical Coherence Tomography (OCT)
-  and Chest X-Ray Images for Classification," Mendeley Data (2018), via
-  [Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia).
-- Grad-CAM: Selvaraju et al., ["Grad-CAM: Visual Explanations from Deep Networks via
-  Gradient-based Localization"](https://arxiv.org/abs/1610.02391) (2017).
+- **Dataset:** Kermany, D., Zhang, K., & Goldbaum, M. *Labeled Optical Coherence Tomography (OCT) and Chest X-Ray Images for Classification* (2018), distributed via Kaggle.
+- **Grad-CAM:** Selvaraju et al., *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization* (2017).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [`LICENSE`](LICENSE).
