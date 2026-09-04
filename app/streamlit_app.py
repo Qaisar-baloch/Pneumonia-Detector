@@ -3,9 +3,10 @@ Pneumonia Detector — Streamlit app
 Loads the ResNet18 model trained in the companion notebook (pneumonia_detection.ipynb),
 lets you upload a chest X-ray, and shows a prediction with a Grad-CAM heatmap.
 
-NOT a medical device. Educational / portfolio use only.
+NOT a medical device. Just a practice AI project, Don't rely completely on its prediction.
 """
 import os
+import textwrap
 
 import numpy as np
 import torch
@@ -160,71 +161,3 @@ else:
             cam, prob = gradcam.generate(input_tensor)
 
         cam_img = Image.fromarray((cam * 255).astype(np.uint8)).resize((IMG_SIZE, IMG_SIZE), Image.BILINEAR)
-        cam_resized = np.array(cam_img).astype(np.float32) / 255.0
-        heatmap = jet_colormap(cam_resized)
-
-        display_img = pil_img.resize((IMG_SIZE, IMG_SIZE))
-        display_arr = np.array(display_img).astype(np.uint8)
-        overlay = np.uint8(0.55 * display_arr + 0.45 * heatmap)
-
-        pred_idx = 1 if prob > PNEUMONIA_THRESHOLD else 0
-        pred_label = idx_to_class.get(pred_idx, str(pred_idx))
-        confidence = prob if pred_idx == 1 else (1 - prob)
-
-        col1, col2 = st.columns([2, 1])
-
-        with col1:
-            img_col1, img_col2 = st.columns(2)
-            with img_col1:
-                st.image(display_arr, caption="Original", use_container_width=True)
-            with img_col2:
-                st.image(overlay, caption="Grad-CAM heatmap", use_container_width=True)
-
-        with col2:
-            accent = "#ff6b5b" if pred_label == "PNEUMONIA" else "#2dd4bf"
-            marker_pos = min(max(prob * 100, 2), 98)
-
-            st.markdown(
-                f"""
-                <div style="
-                    background:#1a1d24;
-                    border:1px solid #2a2e38;
-                    border-radius:10px;
-                    padding:20px;
-                    font-family:monospace;
-                ">
-                    <div style="color:#8a8f98; font-size:11px; letter-spacing:2px;">PREDICTION</div>
-                    <div style="color:{accent}; font-size:28px; font-weight:700; margin:4px 0 16px 0;">
-                        {pred_label}
-                    </div>
-
-                    <div style="position:relative; height:8px; border-radius:4px;
-                                background:linear-gradient(90deg,#2dd4bf,#3a3f4b,#ff6b5b);
-                                margin-bottom:6px;">
-                        <div style="
-                            position:absolute; top:-4px; left:{marker_pos}%;
-                            width:2px; height:16px; background:#ffffff;
-                            transform:translateX(-1px);
-                        "></div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;
-                                color:#8a8f98; font-size:11px;">
-                        <span>NORMAL</span>
-                        <span>{prob*100:.0f}% pneumonia</span>
-                        <span>PNEUMONIA</span>
-                    </div>
-
-                    <hr style="border-color:#2a2e38; margin:16px 0;">
-
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span style="color:#8a8f98;">Confidence</span>
-                        <span style="color:#e6e6e6;">{confidence*100:.0f}%</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="color:#8a8f98;">Grad-CAM focus</span>
-                        <span style="color:#e6e6e6;">{quadrant_focus(cam_resized)}</span>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
