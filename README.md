@@ -1,8 +1,10 @@
 # PneumoScan — Pneumonia Detection from Chest X-Rays
 
-A complete, end-to-end deep learning project: fine-tune a CNN on chest X-rays, evaluate it rigorously, explain its predictions with Grad-CAM, and serve it through a clinical-style Streamlit workstation.
+A chest X-ray classification application with image-quality checks, Grad-CAM visual explanations and a Streamlit interface. The repository also contains a model-development notebook and evaluation material.
 
 ⚠️ **Educational / portfolio project only.** This is not a medical device and has not been validated for clinical use. Always consult a radiologist or physician for real diagnoses.
+
+**My contribution:** I developed the application and integrated an existing trained model. I did not train the model or produce the reported model weights. The repository's notebook and metrics document the model workflow included in the project, not my individual model-training contribution.
 
 **Live demo:** [qaisar-baloch-pneumonia-detector-appstreamlit-app-i5ycry.streamlit.app](https://qaisar-baloch-pneumonia-detector-appstreamlit-app-i5ycry.streamlit.app/)
 
